@@ -93,7 +93,12 @@
     </div>
 
     <script>
-        const RAW_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
+        // Direct link berdasarkan ID Google Sheets & tab 'Monitoring Program' Anda
+        const SHEET_ID = "1zL5pGy8mr3snFyb6HLY04gjYFXtEhVMI0w76K_veFPc";
+        const GID = "915844260";
+        
+        const DIRECT_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+        const GVIZ_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
 
         let rawData = [];
         let activeTab = 'ALL';
@@ -103,9 +108,11 @@
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
             const urlsToTry = [
-                RAW_CSV_URL,
-                `https://corsproxy.io/?${encodeURIComponent(RAW_CSV_URL)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(RAW_CSV_URL)}`
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(DIRECT_CSV)}`,
+                `https://corsproxy.io/?${encodeURIComponent(DIRECT_CSV)}`,
+                DIRECT_CSV,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(GVIZ_CSV)}`,
+                GVIZ_CSV
             ];
 
             let csvText = null;
@@ -121,7 +128,7 @@
                         }
                     }
                 } catch (e) {
-                    console.warn("Gagal via URL:", url, e);
+                    console.warn("Mencoba URL berikutnya karena:", url, e);
                 }
             }
 
@@ -154,13 +161,14 @@
             let idxInvoice = headers.findIndex(h => h.includes('invoice'));
             let idxPO = headers.findIndex(h => h.includes('po'));
 
-            if (idxDSR === -1) idxDSR = 0;
-            if (idxCode === -1) idxCode = 1;
-            if (idxName === -1) idxName = 2;
-            if (idxProgram === -1) idxProgram = 6;
-            if (idxTarget === -1) idxTarget = 7;
-            if (idxInvoice === -1) idxInvoice = 8;
-            if (idxPO === -1) idxPO = 9;
+            // Indeks posisi kolom berdasarkan foto Google Sheets Anda (A, B, C, G, H, I, J)
+            if (idxDSR === -1) idxDSR = 0;        // Kolom A
+            if (idxCode === -1) idxCode = 1;      // Kolom B
+            if (idxName === -1) idxName = 2;      // Kolom C
+            if (idxProgram === -1) idxProgram = 6;// Kolom G
+            if (idxTarget === -1) idxTarget = 7;  // Kolom H
+            if (idxInvoice === -1) idxInvoice = 8;// Kolom I
+            if (idxPO === -1) idxPO = 9;          // Kolom J
 
             rawData = [];
 
