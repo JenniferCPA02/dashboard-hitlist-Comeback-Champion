@@ -82,7 +82,7 @@
                             <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
                             <th class="p-4 text-center whitespace-nowrap">SISA TARGET</th>
                             <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
-                            <th class="p-4 whitespace-nowrap">REMARKS</th>
+                            <th class="p-4 whitespace-nowrap">REMARKS / ISSUE</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
@@ -97,7 +97,6 @@
     </div>
 
     <script>
-        // URL Web App Terbaru
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx56-U27CU5rh-SGzeu5ljdsMLTuZQfS2ixIrrGxaFP-S2ZPsvJCrVfSbH8xxgv1yQXg/exec";
 
         let rawData = [];
@@ -139,6 +138,10 @@
                 const row = rows[i];
                 if (!row || row.length <= 1) continue;
 
+                // Indeks Array Sesuai Kolom Sheet:
+                // A (0): DSR | C (2): Customer Name | G (6): Eligible Program
+                // H (7): Target | I (8): Qty Invoice | J (9): Qty PO
+                // M (12): WIN JULY | N (13): Remarks / Issue | O (14): WIN July & Aug
                 const dsrVal = row[0] ? String(row[0]).trim() : "";
                 const nameVal = row[2] ? String(row[2]).trim() : "";
                 const programVal = row[6] ? String(row[6]).trim() : "0";
@@ -155,12 +158,12 @@
                 const winJulyVal = row[12] ? String(row[12]).trim() : "-";
                 const remarksVal = row[13] ? String(row[13]).trim() : "-";
                 
+                // Pengecekan Kolom O (WIN July & Aug) untuk Hitungan Succession Rate
                 const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
                     winJulyAugRaw.toUpperCase() === "YES" || 
-                    winJulyAugRaw.toUpperCase() === "WIN" ||
-                    (winJulyAugRaw !== "" && winJulyAugRaw !== "0" && winJulyAugRaw !== "-")
+                    winJulyAugRaw.toUpperCase() === "WIN"
                 );
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
