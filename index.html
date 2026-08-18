@@ -97,7 +97,7 @@
     </div>
 
     <script>
-        // URL Apps Script Terbaru yang Benar
+        // URL Apps Script Terbaru
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx56-U27CU5rh-SGzeu5ljdsMLTuZQfS2ixIrrGxaFP-S2ZPsvJCrVfSbH8xxgv1yQXg/exec";
 
         let rawData = [];
@@ -114,7 +114,7 @@
                 });
 
                 if (!res.ok) {
-                    throw new Error(`HTTP Error Status: ${res.status}`);
+                    throw new Error(`HTTP Status Error: ${res.status}`);
                 }
 
                 const rows = await res.json();
