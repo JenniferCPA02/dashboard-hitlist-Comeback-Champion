@@ -98,7 +98,7 @@
 
     <script>
         // URL Apps Script Terbaru yang Benar
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby053m8rT3v_J8DK5pmLhgEhomg6AMes5Y68qJwSNdjT2PuLd5nYC1HOct9TvVKBE3VpA/exec";
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwx56-U27CU5rh-SGzeu5ljdsMLTuZQfS2ixIrrGxaFP-S2ZPsvJCrVfSbH8xxgv1yQXg/exec";
 
         let rawData = [];
         let activeTab = 'ALL';
@@ -108,12 +108,22 @@
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
             try {
-                const res = await fetch(APPS_SCRIPT_URL);
+                const res = await fetch(APPS_SCRIPT_URL, {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP Error Status: ${res.status}`);
+                }
+
                 const rows = await res.json();
                 processParsedRows(rows);
             } catch (e) {
-                console.error(e);
-                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan koneksi internet stabil.";
+                console.error("Fetch Error:", e);
+                if (statusEl) {
+                    statusEl.innerText = "Gagal memuat data. Mohon pastikan deployment Apps Script diset ke 'Anyone' (Siapa saja).";
+                }
             }
         }
 
@@ -129,9 +139,9 @@
                 const row = rows[i];
                 if (!row || row.length <= 1) continue;
 
-                const dsrVal = row[0] ? String(row[0]).trim() : "";       // Kolom A (DSR)
-                const nameVal = row[2] ? String(row[2]).trim() : "";      // Kolom C (Customer Name)
-                const programVal = row[6] ? String(row[6]).trim() : "0";  // Kolom G (Eligible Program)
+                const dsrVal = row[0] ? String(row[0]).trim() : "";
+                const nameVal = row[2] ? String(row[2]).trim() : "";
+                const programVal = row[6] ? String(row[6]).trim() : "0";
                 
                 const parseNum = (val) => {
                     if (!val) return 0;
@@ -139,13 +149,12 @@
                     return parseInt(clean) || 0;
                 };
 
-                const targetVal = parseNum(row[7]);   // Kolom H (Target)
-                const invoiceVal = parseNum(row[8]);  // Kolom I (Qty Invoice)
-                const poVal = parseNum(row[9]);       // Kolom J (Qty PO)
-                const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY)
-                const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
+                const targetVal = parseNum(row[7]);
+                const invoiceVal = parseNum(row[8]);
+                const poVal = parseNum(row[9]);
+                const winJulyVal = row[12] ? String(row[12]).trim() : "-";
+                const remarksVal = row[13] ? String(row[13]).trim() : "-";
                 
-                // Kolom O (WIN July & Aug) - Memeriksa nilai angka 1, 'YES', 'WIN', atau terisi data
                 const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
@@ -219,7 +228,6 @@
                 return matchDSR && matchTab;
             });
 
-            // URUTKAN BERDASARKAN DSR A-Z DULU, KEMUDIAN NAMA CUSTOMER A-Z
             filtered.sort((a, b) => {
                 const dsrA = String(a.dsr).trim();
                 const dsrB = String(b.dsr).trim();
