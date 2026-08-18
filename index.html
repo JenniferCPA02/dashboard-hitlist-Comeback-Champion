@@ -160,7 +160,7 @@
             select.innerHTML = '<option value="ALL">-- Semua DSR --</option>';
 
             const dsrSet = new Set(rawData.map(item => item.dsr));
-            Array.from(dsrSet).sort().forEach(dsr => {
+            Array.from(dsrSet).sort((a, b) => a.localeCompare(b, 'id', { sensitivity: 'base' })).forEach(dsr => {
                 const opt = document.createElement('option');
                 opt.value = dsr;
                 opt.innerText = dsr;
@@ -194,19 +194,25 @@
             const selectedDSR = document.getElementById('dsrSelect').value;
             
             let filtered = rawData.filter(item => {
-                const matchDSR = (selectedDSR === 'ALL') || (item.dsr === selectedDSR);
+                const matchDSR = (selectedDSR === 'ALL') || (item.dsr.trim() === selectedDSR.trim());
                 const isFocus = item.program.toLowerCase().includes('focus');
                 const matchTab = (activeTab === 'ALL') || isFocus;
                 return matchDSR && matchTab;
             });
 
-            // PENGURUTAN BERTINGKAT: DSR DULU (A-Z), KEMUDIAN CUSTOMER NAME (A-Z)
+            // URUTKAN BERDASARKAN DSR A-Z DULU, KEMUDIAN NAMA CUSTOMER A-Z
             filtered.sort((a, b) => {
-                const dsrCompare = a.dsr.localeCompare(b.dsr);
+                const dsrA = String(a.dsr).trim();
+                const dsrB = String(b.dsr).trim();
+                const dsrCompare = dsrA.localeCompare(dsrB, 'id', { sensitivity: 'base' });
+                
                 if (dsrCompare !== 0) {
                     return dsrCompare;
                 }
-                return a.name.localeCompare(b.name);
+                
+                const nameA = String(a.name).trim();
+                const nameB = String(b.name).trim();
+                return nameA.localeCompare(nameB, 'id', { sensitivity: 'base' });
             });
 
             let totalPO = 0, totalInvoice = 0, totalSisa = 0;
