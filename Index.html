@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Dashboard DSR - Program Comeback Champion</title>
+    <!-- Tailwind CSS untuk Desain Visual Modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PapaParse Library untuk membaca CSV Google Sheets secara langsung -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        
+        <!-- HEADER & FILTER DSR -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800">Dashboard Monitoring Hitlist</h1>
+                <p class="text-sm text-slate-500">Program Comeback Champion</p>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <label for="dsrSelect" class="font-semibold text-slate-700">Pilih DSR:</label>
+                <select id="dsrSelect" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-900 rounded-lg p-2.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none">
+                    <option value="ALL">-- Semua DSR --</option>
+                </select>
+                <button onclick="fetchCSVData()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-2.5 rounded-lg text-sm transition-all border border-blue-200">
+                    🔄 Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- TAB NAVIGATION (2 DASHBOARD DALAM 1 LINK) -->
+        <div class="flex border-b border-slate-300 gap-2">
+            <button id="tabAll" onclick="switchTab('ALL')" class="py-3 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 transition-all">
+                1. Semua Data (Hitlist Focus & 0)
+            </button>
+            <button id="tabFocus" onclick="switchTab('FOCUS')" class="py-3 px-6 font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all">
+                2. Khusus Hitlist Focus
+            </button>
+        </div>
+
+        <!-- SUMMARY CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Customer</span>
+                <p id="sumCustomer" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Qty PO</span>
+                <p id="sumPO" class="text-3xl font-extrabold text-blue-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Terinvoice</span>
+                <p id="sumInvoice" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Sisa Belum Invoice</span>
+                <p id="sumSisa" class="text-3xl font-extrabold text-amber-500 mt-1">0</p>
+            </div>
+        </div>
+
+        <!-- TABEL DETAIL CUSTOMER -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-5 border-b border-slate-100 flex justify-between items-center">
+                <h3 class="font-bold text-slate-700">List Detail Customer (Urut A-Z)</h3>
+                <span id="badgeProgram" class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-full">Menampilkan Semua Program</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+                        <tr>
+                            <th class="p-4">DSR</th>
+                            <th class="p-4">Customer Code</th>
+                            <th class="p-4">Customer Name</th>
+                            <th class="p-4">Eligible Program</th>
+                            <th class="p-4 text-center">Target</th>
+                            <th class="p-4 text-center">Qty PO</th>
+                            <th class="p-4 text-center">Qty Invoice</th>
+                            <th class="p-4 text-center">Sisa Target</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100">
+                        <tr>
+                            <td colspan="8" class="p-6 text-center text-slate-400">Memuat data dari Google Sheets...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Link CSV Google Spreadsheet Anda
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzNZrLYIEfAFETq2GNFHxgC_eyNkFb5DGVcknd6sAOf5pXdKWkqXBCFENKEibP3g/pub?output=csv";
+
+        let rawData = [];
+        let activeTab = 'ALL';
+
+        // Load data CSV langsung dari Google Sheets
+        function fetchCSVData() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    rawData = results.data.map(row => ({
+                        dsr: (row["DSR"] || "").trim(),
+                        code: (row["Customer Code"] || "").trim(),
+                        name: (row["Customer Name"] || "").trim(),
+                        program: (row["Eligible Program"] || "").trim(),
+                        target: parseInt(row["Target (Drum)"] || row["Target"] || 0) || 0,
+                        invoice: parseInt(row["Qty Invoice"] || 0) || 0,
+                        po: parseInt(row["Qty PO"] || 0) || 0
+                    })).filter(item => item.dsr !== "");
+
+                    initDSRFilter();
+                    renderDashboard();
+                },
+                error: function(err) {
+                    alert("Gagal memuat data dari Google Sheets.");
+                    console.error(err);
+                }
+            });
+        }
+
+        // Memuat daftar DSR ke Dropdown Filter
+        function initDSRFilter() {
+            const select = document.getElementById('dsrSelect');
+            const currentValue = select.value;
+            select.innerHTML = '<option value="ALL">-- Semua DSR --</option>';
+
+            const dsrSet = new Set(rawData.map(item => item.dsr));
+            Array.from(dsrSet).sort().forEach(dsr => {
+                const opt = document.createElement('option');
+                opt.value = dsr;
+                opt.innerText = dsr;
+                select.appendChild(opt);
+            });
+
+            if (Array.from(dsrSet).includes(currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        // Beralih antara Tab Semua Data vs Khusus Hitlist Focus
+        function switchTab(tab) {
+            activeTab = tab;
+            const tabAll = document.getElementById('tabAll');
+            const tabFocus = document.getElementById('tabFocus');
+            const badge = document.getElementById('badgeProgram');
+
+            if (tab === 'ALL') {
+                tabAll.className = "py-3 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 transition-all";
+                tabFocus.className = "py-3 px-6 font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all";
+                badge.innerText = "Menampilkan Semua Program";
+            } else {
+                tabFocus.className = "py-3 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 transition-all";
+                tabAll.className = "py-3 px-6 font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition-all";
+                badge.innerText = "Menampilkan Hitlist Focus Saja";
+            }
+            renderDashboard();
+        }
+
+        // Render Ringkasan & Tabel
+        function renderDashboard() {
+            const selectedDSR = document.getElementById('dsrSelect').value;
+            
+            // 1. Filter Data Berdasarkan DSR & Tab Terpilih
+            let filtered = rawData.filter(item => {
+                const matchDSR = (selectedDSR === 'ALL') || (item.dsr === selectedDSR);
+                const isFocus = item.program.toLowerCase().includes('focus');
+                const matchTab = (activeTab === 'ALL') || isFocus;
+                return matchDSR && matchTab;
+            });
+
+            // 2. Urutkan Nama Customer Berurutan A-Z
+            filtered.sort((a, b) => a.name.localeCompare(b.name));
+
+            // 3. Hitung Ringkasan (Summary)
+            let totalPO = 0, totalInvoice = 0, totalSisa = 0;
+            filtered.forEach(i => {
+                totalPO += i.po;
+                totalInvoice += i.invoice;
+                const sisa = i.target - i.invoice;
+                totalSisa += (sisa > 0 ? sisa : 0);
+            });
+
+            document.getElementById('sumCustomer').innerText = filtered.length;
+            document.getElementById('sumPO').innerText = totalPO;
+            document.getElementById('sumInvoice').innerText = totalInvoice;
+            document.getElementById('sumSisa').innerText = totalSisa;
+
+            // 4. Render Tabel Data
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const sisa = item.target - item.invoice;
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 font-medium text-slate-700">${item.dsr}</td>
+                    <td class="p-4 font-mono text-xs text-slate-500">${item.code}</td>
+                    <td class="p-4 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-4">
+                        <span class="text-xs px-2.5 py-1 rounded-md ${item.program.toLowerCase().includes('focus') ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-slate-100 text-slate-500'}">
+                            ${item.program || '-'}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center font-medium">${item.target}</td>
+                    <td class="p-4 text-center font-semibold text-blue-600">${item.po}</td>
+                    <td class="p-4 text-center font-semibold text-emerald-600">${item.invoice}</td>
+                    <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'}">${sisa > 0 ? sisa : 0}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Jalankan saat pertama kali halaman dibuka
+        fetchCSVData();
+    </script>
+</body>
+</html>
