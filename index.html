@@ -102,7 +102,6 @@
             const statusEl = document.getElementById('statusMessage');
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
-            // Beberapa server proxy untuk memastikan data berhasil ditarik meski diblokir browser
             const urlsToTry = [
                 RAW_CSV_URL,
                 `https://corsproxy.io/?${encodeURIComponent(RAW_CSV_URL)}`,
@@ -145,10 +144,8 @@
                 return;
             }
 
-            // Membaca baris pertama sebagai Header
             const headers = rows[0].map(h => String(h).trim().toLowerCase());
             
-            // Mencari indeks kolom berdasarkan kata kunci
             let idxDSR = headers.findIndex(h => h.includes('dsr'));
             let idxCode = headers.findIndex(h => h.includes('code') || h.includes('kode'));
             let idxName = headers.findIndex(h => h.includes('name') || h.includes('nama') || h.includes('customer'));
@@ -157,14 +154,13 @@
             let idxInvoice = headers.findIndex(h => h.includes('invoice'));
             let idxPO = headers.findIndex(h => h.includes('po'));
 
-            // Fallback default sesuai dengan susunan kolom standar (A-J)
-            if (idxDSR === -1) idxDSR = 0;        // Kolom A
-            if (idxCode === -1) idxCode = 1;      // Kolom B
-            if (idxName === -1) idxName = 2;      // Kolom C
-            if (idxProgram === -1) idxProgram = 6;// Kolom G
-            if (idxTarget === -1) idxTarget = 7;  // Kolom H
-            if (idxInvoice === -1) idxInvoice = 8;// Kolom I
-            if (idxPO === -1) idxPO = 9;          // Kolom J
+            if (idxDSR === -1) idxDSR = 0;
+            if (idxCode === -1) idxCode = 1;
+            if (idxName === -1) idxName = 2;
+            if (idxProgram === -1) idxProgram = 6;
+            if (idxTarget === -1) idxTarget = 7;
+            if (idxInvoice === -1) idxInvoice = 8;
+            if (idxPO === -1) idxPO = 9;
 
             rawData = [];
 
@@ -295,7 +291,6 @@
             });
         }
 
-        // Jalankan otomatis saat halaman dimuat
         fetchCSVData();
     </script>
 </body>
