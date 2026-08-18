@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Monitoring Hitlist - CPA 02</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
@@ -102,53 +101,57 @@
         let rawData = [];
         let activeTab = 'ALL';
 
-        async function fetchData() {
+        function fetchData() {
             const statusEl = document.getElementById('statusMessage');
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
-            try {
-                // Menggunakan fetch dengan penanganan pengalihan otomatis dari Apps Script
-                const res = await fetch(APPS_SCRIPT_URL, {
-                    method: 'GET',
-                    redirect: 'follow'
-                });
+            // Hapus script JSONP lama jika ada
+            const oldScript = document.getElementById('jsonpScript');
+            if (oldScript) oldScript.remove();
 
-                if (!res.ok) {
-                    throw new Error(`HTTP Status ${res.status}`);
-                }
-
-                const rows = await res.json();
-                processParsedRows(rows);
-            } catch (e) {
-                console.error("Fetch Error:", e);
-                if (statusEl) {
-                    statusEl.innerText = "Gagal memuat data. Mohon pastikan Akses Deployment Apps Script diset ke 'Anyone' (Siapa Saja) dan versi baru sudah ter-deploy.";
-                }
-            }
+            // Panggil via JSONP untuk menghindari CORS issue
+            const script = document.createElement('script');
+            script.id = 'jsonpScript';
+            script.src = `${APPS_SCRIPT_URL}?callback=handleAppsScriptData&_=${new Date().getTime()}`;
+            script.onerror = function() {
+                if (statusEl) statusEl.innerText = "Gagal terhubung ke Google Apps Script. Pastikan Web App diset ke 'Anyone'.";
+            };
+            document.body.appendChild(script);
         }
 
-        function processParsedRows(rows) {
-            if (!rows || !Array.isArray(rows) || rows.length < 2) {
+        // Callback function untuk data JSONP
+        function handleAppsScriptData(rows) {
+            if (!rows || !Array.isArray(rows) || rows.length <= 1) {
                 const statusEl = document.getElementById('statusMessage');
-                if (statusEl) statusEl.innerText = "Data kosong atau tidak ditemukan.";
+                if (statusEl) statusEl.innerText = "Data di sheet 'Monitoring Program' kosong.";
                 return;
             }
 
             rawData = [];
 
-            // Lewati baris header (index 0)
+            // Baris 0 = Header (DSR, Customer Code, dll), Data mulai dari indeks 1
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || !Array.isArray(row) || row.length === 0) continue;
 
-                // Indeks Array Kolom Sheet yang Tepat:
-                // A (0): DSR | C (2): Customer Name | G (6): Eligible Program
-                // H (7): Target | I (8): Qty Invoice | J (9): Qty PO
-                // M (12): WIN JULY | N (13): Remarks / Issue | O (14): WIN July & Aug
+                // Pemetaaan Kolom Sheet 'Monitoring Program':
+                // A (0) : DSR
+                // C (2) : Customer Name
+                // G (6) : Eligible Program
+                // H (7) : Target (Drum)
+                // I (8) : Qty Invoice
+                // J (9) : Qty PO
+                // M (12): WIN JULY
+                // N (13): Remarks / Issue
+                // O (14): WIN July & Aug
+
                 const dsrVal = row[0] !== undefined && row[0] !== null ? String(row[0]).trim() : "";
                 const nameVal = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : "";
                 const programVal = row[6] !== undefined && row[6] !== null ? String(row[6]).trim() : "0";
-                
+
+                // Jika nama customer dan DSR kosong, abaikan baris tersebut
+                if (!nameVal && !dsrVal) continue;
+
                 const parseNum = (val) => {
                     if (val === undefined || val === null || val === "") return 0;
                     if (typeof val === 'number') return val;
@@ -161,8 +164,8 @@
                 const poVal = parseNum(row[9]);
                 const winJulyVal = row[12] !== undefined && row[12] !== null ? String(row[12]).trim() : "-";
                 const remarksVal = row[13] !== undefined && row[13] !== null ? String(row[13]).trim() : "-";
-                
-                // Pengecekan Kolom O (WIN July & Aug) untuk hitungan Succession Rate (1, YES, atau WIN)
+
+                // Hitungan Succession Rate (Kolom O)
                 const winJulyAugRaw = row[14] !== undefined && row[14] !== null ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
@@ -170,19 +173,17 @@
                     winJulyAugRaw.toUpperCase() === "WIN"
                 );
 
-                if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
-                    rawData.push({
-                        dsr: dsrVal,
-                        name: nameVal,
-                        program: programVal,
-                        target: targetVal,
-                        invoice: invoiceVal,
-                        po: poVal,
-                        winJuly: winJulyVal,
-                        remarks: remarksVal,
-                        isWinCombined: isWinCombined
-                    });
-                }
+                rawData.push({
+                    dsr: dsrVal || "-",
+                    name: nameVal || "-",
+                    program: programVal || "0",
+                    target: targetVal,
+                    invoice: invoiceVal,
+                    po: poVal,
+                    winJuly: winJulyVal || "-",
+                    remarks: remarksVal || "-",
+                    isWinCombined: isWinCombined
+                });
             }
 
             initDSRFilter();
@@ -194,7 +195,7 @@
             const currentValue = select.value;
             select.innerHTML = '<option value="ALL">-- Semua DSR --</option>';
 
-            const dsrSet = new Set(rawData.map(item => item.dsr));
+            const dsrSet = new Set(rawData.map(item => item.dsr).filter(d => d !== "-"));
             Array.from(dsrSet).sort((a, b) => a.localeCompare(b, 'id', { sensitivity: 'base' })).forEach(dsr => {
                 const opt = document.createElement('option');
                 opt.value = dsr;
@@ -235,14 +236,13 @@
                 return matchDSR && matchTab;
             });
 
+            // Urutkan berdasarkan DSR A-Z, lalu Nama Customer A-Z
             filtered.sort((a, b) => {
                 const dsrA = String(a.dsr).trim();
                 const dsrB = String(b.dsr).trim();
                 const dsrCompare = dsrA.localeCompare(dsrB, 'id', { sensitivity: 'base' });
                 
-                if (dsrCompare !== 0) {
-                    return dsrCompare;
-                }
+                if (dsrCompare !== 0) return dsrCompare;
                 
                 const nameA = String(a.name).trim();
                 const nameB = String(b.name).trim();
@@ -299,7 +299,7 @@
             });
         }
 
-        // Jalankan saat halaman dibuka
+        // Jalankan saat pertama kali dibuka
         fetchData();
     </script>
 </body>
