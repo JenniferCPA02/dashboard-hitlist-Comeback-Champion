@@ -76,7 +76,7 @@
                             <th class="p-4 text-center whitespace-nowrap">QTY PO</th>
                             <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
                             <th class="p-4 text-center whitespace-nowrap">SISA TARGET</th>
-                            <th class="p-4 text-center whitespace-nowrap">WIN JULY 2026</th>
+                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
                             <th class="p-4 whitespace-nowrap">REMARKS</th>
                         </tr>
                     </thead>
@@ -136,7 +136,7 @@
                 const targetVal = parseNum(row[7]);   // Kolom H (Target)
                 const invoiceVal = parseNum(row[8]);  // Kolom I (Qty Invoice)
                 const poVal = parseNum(row[9]);       // Kolom J (Qty PO)
-                const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY 2026)
+                const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY)
                 const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
