@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Dashboard DSR - Program Comeback Champion</title>
+    <title>Dashboard Monitoring Hitlist - Program Comeback Champion</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- PapaParse Library -->
@@ -44,19 +44,19 @@
         <!-- SUMMARY CARDS -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Customer</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL CUSTOMER</span>
                 <p id="sumCustomer" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Qty PO</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL QTY PO</span>
                 <p id="sumPO" class="text-3xl font-extrabold text-blue-600 mt-1">0</p>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Total Terinvoice</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL TERINVOICE</span>
                 <p id="sumInvoice" class="text-3xl font-extrabold text-emerald-600 mt-1">0</p>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">Sisa Belum Invoice</span>
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">SISA BELUM INVOICE</span>
                 <p id="sumSisa" class="text-3xl font-extrabold text-amber-500 mt-1">0</p>
             </div>
         </div>
@@ -72,18 +72,18 @@
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
                         <tr>
                             <th class="p-4">DSR</th>
-                            <th class="p-4">Customer Code</th>
-                            <th class="p-4">Customer Name</th>
-                            <th class="p-4">Eligible Program</th>
-                            <th class="p-4 text-center">Target</th>
-                            <th class="p-4 text-center">Qty PO</th>
-                            <th class="p-4 text-center">Qty Invoice</th>
-                            <th class="p-4 text-center">Sisa Target</th>
+                            <th class="p-4">CUSTOMER CODE</th>
+                            <th class="p-4">CUSTOMER NAME</th>
+                            <th class="p-4">ELIGIBLE PROGRAM</th>
+                            <th class="p-4 text-center">TARGET</th>
+                            <th class="p-4 text-center">QTY PO</th>
+                            <th class="p-4 text-center">QTY INVOICE</th>
+                            <th class="p-4 text-center">SISA TARGET</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="8" class="p-6 text-center text-slate-400">Memuat data...</td>
+                            <td colspan="8" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -93,53 +93,71 @@
     </div>
 
     <script>
-        const ORIGINAL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
-        const PROXY_CSV = "https://api.allorigins.win/raw?url=" + encodeURIComponent(ORIGINAL_CSV);
+        const RAW_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
 
         let rawData = [];
         let activeTab = 'ALL';
 
-        function fetchCSVData() {
-            // Coba ambil lewat proxy CORS terlebih dahulu agar tidak diblokir browser
-            Papa.parse(PROXY_CSV, {
-                download: true,
+        async function fetchCSVData() {
+            const statusEl = document.getElementById('statusMessage');
+            if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
+
+            // Beberapa server proxy untuk memastikan data berhasil ditarik meski diblokir browser
+            const urlsToTry = [
+                RAW_CSV_URL,
+                `https://corsproxy.io/?${encodeURIComponent(RAW_CSV_URL)}`,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(RAW_CSV_URL)}`
+            ];
+
+            let csvText = null;
+
+            for (let url of urlsToTry) {
+                try {
+                    let res = await fetch(url);
+                    if (res.ok) {
+                        let text = await res.text();
+                        if (text && text.trim().length > 0 && !text.includes('<!DOCTYPE html>')) {
+                            csvText = text;
+                            break;
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Gagal via URL:", url, e);
+                }
+            }
+
+            if (!csvText) {
+                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan file Google Sheets sudah terbuka publik.";
+                return;
+            }
+
+            Papa.parse(csvText, {
                 skipEmptyLines: true,
                 complete: function(results) {
-                    processParsedData(results.data);
-                },
-                error: function() {
-                    // Jika proxy gagal, coba ambil langsung dari URL Asli
-                    Papa.parse(ORIGINAL_CSV, {
-                        download: true,
-                        skipEmptyLines: true,
-                        complete: function(results) {
-                            processParsedData(results.data);
-                        },
-                        error: function(err) {
-                            console.error(err);
-                            alert("Gagal memuat data dari spreadsheet. Pastikan file dipublikasikan ke web.");
-                        }
-                    });
+                    processParsedRows(results.data);
                 }
             });
         }
 
-        function processParsedData(rows) {
-            if (!rows || rows.length < 2) return;
+        function processParsedRows(rows) {
+            if (!rows || rows.length < 2) {
+                document.getElementById('statusMessage').innerText = "Data CSV kosong atau tidak ditemukan.";
+                return;
+            }
 
-            // Membaca baris header
-            const headers = rows[0].map(h => h.trim().toLowerCase());
+            // Membaca baris pertama sebagai Header
+            const headers = rows[0].map(h => String(h).trim().toLowerCase());
             
-            // Pencarian posisi index kolom secara dinamis berdasarkan posisi relatif
+            // Mencari indeks kolom berdasarkan kata kunci
             let idxDSR = headers.findIndex(h => h.includes('dsr'));
-            let idxCode = headers.findIndex(h => h.includes('code'));
-            let idxName = headers.findIndex(h => h.includes('name') || h.includes('customer'));
+            let idxCode = headers.findIndex(h => h.includes('code') || h.includes('kode'));
+            let idxName = headers.findIndex(h => h.includes('name') || h.includes('nama') || h.includes('customer'));
             let idxProgram = headers.findIndex(h => h.includes('program') || h.includes('eligible'));
             let idxTarget = headers.findIndex(h => h.includes('target'));
             let idxInvoice = headers.findIndex(h => h.includes('invoice'));
             let idxPO = headers.findIndex(h => h.includes('po'));
 
-            // Fallback default index berdasarkan screenshot spreadsheet Anda jika header tidak terdeteksi
+            // Fallback default sesuai dengan susunan kolom standar (A-J)
             if (idxDSR === -1) idxDSR = 0;        // Kolom A
             if (idxCode === -1) idxCode = 1;      // Kolom B
             if (idxName === -1) idxName = 2;      // Kolom C
@@ -150,19 +168,24 @@
 
             rawData = [];
 
-            // Proses baris data (abaikan baris 0 / header)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
                 if (!row || row.length <= 1) continue;
 
-                const dsrVal = row[idxDSR] ? row[idxDSR].trim() : "";
-                const codeVal = row[idxCode] ? row[idxCode].trim() : "";
-                const nameVal = row[idxName] ? row[idxName].trim() : "";
-                const programVal = row[idxProgram] ? row[idxProgram].trim() : "";
+                const dsrVal = row[idxDSR] ? String(row[idxDSR]).trim() : "";
+                const codeVal = row[idxCode] ? String(row[idxCode]).trim() : "";
+                const nameVal = row[idxName] ? String(row[idxName]).trim() : "";
+                const programVal = row[idxProgram] ? String(row[idxProgram]).trim() : "";
                 
-                const targetVal = row[idxTarget] ? parseInt(row[idxTarget].replace(/[^0-9]/g, '')) || 0 : 0;
-                const invoiceVal = row[idxInvoice] ? parseInt(row[idxInvoice].replace(/[^0-9]/g, '')) || 0 : 0;
-                const poVal = row[idxPO] ? parseInt(row[idxPO].replace(/[^0-9]/g, '')) || 0 : 0;
+                const parseNum = (val) => {
+                    if (!val) return 0;
+                    let clean = String(val).replace(/[^0-9]/g, '');
+                    return parseInt(clean) || 0;
+                };
+
+                const targetVal = parseNum(row[idxTarget]);
+                const invoiceVal = parseNum(row[idxInvoice]);
+                const poVal = parseNum(row[idxPO]);
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
                     rawData.push({
@@ -227,10 +250,8 @@
                 return matchDSR && matchTab;
             });
 
-            // Urutkan A-Z berdasarkan Nama Customer
             filtered.sort((a, b) => a.name.localeCompare(b.name));
 
-            // Hitung ringkasan
             let totalPO = 0, totalInvoice = 0, totalSisa = 0;
             filtered.forEach(i => {
                 totalPO += i.po;
@@ -240,9 +261,9 @@
             });
 
             document.getElementById('sumCustomer').innerText = filtered.length;
-            document.getElementById('sumPO').innerText = totalPO;
-            document.getElementById('sumInvoice').innerText = totalInvoice;
-            document.getElementById('sumSisa').innerText = totalSisa;
+            document.getElementById('sumPO').innerText = totalPO.toLocaleString('id-ID');
+            document.getElementById('sumInvoice').innerText = totalInvoice.toLocaleString('id-ID');
+            document.getElementById('sumSisa').innerText = totalSisa.toLocaleString('id-ID');
 
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
@@ -265,16 +286,16 @@
                             ${item.program || '0'}
                         </span>
                     </td>
-                    <td class="p-4 text-center font-medium">${item.target}</td>
-                    <td class="p-4 text-center font-semibold text-blue-600">${item.po}</td>
-                    <td class="p-4 text-center font-semibold text-emerald-600">${item.invoice}</td>
-                    <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'}">${sisa > 0 ? sisa : 0}</td>
+                    <td class="p-4 text-center font-medium">${item.target.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold text-blue-600">${item.po.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold text-emerald-600">${item.invoice.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'}">${sisa > 0 ? sisa.toLocaleString('id-ID') : 0}</td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        // Jalankan saat halaman dibuka
+        // Jalankan otomatis saat halaman dimuat
         fetchCSVData();
     </script>
 </body>
