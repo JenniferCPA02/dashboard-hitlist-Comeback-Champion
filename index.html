@@ -62,7 +62,7 @@
         <!-- TABEL DETAIL CUSTOMER -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             <div class="p-5 border-b border-slate-100 flex justify-between items-center">
-                <h3 class="font-bold text-slate-700">List Detail Customer (Urut A-Z)</h3>
+                <h3 class="font-bold text-slate-700">List Detail Customer (Urut DSR & Customer A-Z)</h3>
                 <span id="badgeProgram" class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-full">Menampilkan Semua Program</span>
             </div>
             <div class="overflow-x-auto">
@@ -91,7 +91,6 @@
     </div>
 
     <script>
-        // LINK WEB APP TERBARU
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSWOJmuAsVdhcpV6qM259OQM6DvSgkt0HxBXAzxKe6UkWIJmdRY3Lll7E-PZcsSHKC/exec";
 
         let rawData = [];
@@ -123,7 +122,6 @@
                 const row = rows[i];
                 if (!row || row.length <= 1) continue;
 
-                // MEMBACA KOLOM BERDASARKAN INDEX TEPAT DARI SHEET
                 const dsrVal = row[0] ? String(row[0]).trim() : "";       // Kolom A (DSR)
                 const codeVal = row[1] ? String(row[1]).trim() : "";      // Kolom B (Customer Code)
                 const nameVal = row[2] ? String(row[2]).trim() : "";      // Kolom C (Customer Name)
@@ -202,7 +200,14 @@
                 return matchDSR && matchTab;
             });
 
-            filtered.sort((a, b) => a.name.localeCompare(b.name));
+            // PENGURUTAN BERTINGKAT: DSR DULU (A-Z), KEMUDIAN CUSTOMER NAME (A-Z)
+            filtered.sort((a, b) => {
+                const dsrCompare = a.dsr.localeCompare(b.dsr);
+                if (dsrCompare !== 0) {
+                    return dsrCompare;
+                }
+                return a.name.localeCompare(b.name);
+            });
 
             let totalPO = 0, totalInvoice = 0, totalSisa = 0;
             filtered.forEach(i => {
