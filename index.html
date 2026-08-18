@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoring Dashboard DSR - Program Comeback Champion</title>
-    <!-- Tailwind CSS untuk Desain Visual Modern -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse Library untuk membaca CSV Google Sheets -->
+    <!-- PapaParse Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
@@ -83,7 +83,7 @@
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="8" class="p-6 text-center text-slate-400">Memuat data dari Google Sheets...</td>
+                            <td colspan="8" class="p-6 text-center text-slate-400">Memuat data...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -93,58 +93,92 @@
     </div>
 
     <script>
-        // LINK PUBLIK CSV
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
+        const ORIGINAL_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
+        const PROXY_CSV = "https://api.allorigins.win/raw?url=" + encodeURIComponent(ORIGINAL_CSV);
 
         let rawData = [];
         let activeTab = 'ALL';
 
-        // Helper function untuk mencari value kolom berdasarkan beberapa variasi nama header
-        function getVal(row, possibleKeys) {
-            for (let key of possibleKeys) {
-                for (let actualKey in row) {
-                    if (actualKey.trim().toLowerCase() === key.toLowerCase()) {
-                        return row[actualKey] || "";
-                    }
-                }
-            }
-            return "";
-        }
-
         function fetchCSVData() {
-            Papa.parse(CSV_URL, {
+            // Coba ambil lewat proxy CORS terlebih dahulu agar tidak diblokir browser
+            Papa.parse(PROXY_CSV, {
                 download: true,
-                header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    rawData = results.data.map(row => {
-                        const dsrVal = getVal(row, ["DSR"]);
-                        const codeVal = getVal(row, ["Customer Code", "Code"]);
-                        const nameVal = getVal(row, ["Customer Name", "Name"]);
-                        const programVal = getVal(row, ["Eligible Program", "Program"]);
-                        const targetVal = getVal(row, ["Target (Drum)", "Target"]);
-                        const invoiceVal = getVal(row, ["Qty Invoice", "Invoice"]);
-                        const poVal = getVal(row, ["Qty PO", "PO"]);
-
-                        return {
-                            dsr: dsrVal.trim(),
-                            code: codeVal.trim(),
-                            name: nameVal.trim(),
-                            program: programVal.trim(),
-                            target: parseInt(targetVal) || 0,
-                            invoice: parseInt(invoiceVal) || 0,
-                            po: parseInt(poVal) || 0
-                        };
-                    }).filter(item => item.dsr !== "");
-
-                    initDSRFilter();
-                    renderDashboard();
+                    processParsedData(results.data);
                 },
-                error: function(err) {
-                    alert("Gagal memuat data dari spreadsheet. Pastikan koneksi aman.");
-                    console.error(err);
+                error: function() {
+                    // Jika proxy gagal, coba ambil langsung dari URL Asli
+                    Papa.parse(ORIGINAL_CSV, {
+                        download: true,
+                        skipEmptyLines: true,
+                        complete: function(results) {
+                            processParsedData(results.data);
+                        },
+                        error: function(err) {
+                            console.error(err);
+                            alert("Gagal memuat data dari spreadsheet. Pastikan file dipublikasikan ke web.");
+                        }
+                    });
                 }
             });
+        }
+
+        function processParsedData(rows) {
+            if (!rows || rows.length < 2) return;
+
+            // Membaca baris header
+            const headers = rows[0].map(h => h.trim().toLowerCase());
+            
+            // Pencarian posisi index kolom secara dinamis berdasarkan posisi relatif
+            let idxDSR = headers.findIndex(h => h.includes('dsr'));
+            let idxCode = headers.findIndex(h => h.includes('code'));
+            let idxName = headers.findIndex(h => h.includes('name') || h.includes('customer'));
+            let idxProgram = headers.findIndex(h => h.includes('program') || h.includes('eligible'));
+            let idxTarget = headers.findIndex(h => h.includes('target'));
+            let idxInvoice = headers.findIndex(h => h.includes('invoice'));
+            let idxPO = headers.findIndex(h => h.includes('po'));
+
+            // Fallback default index berdasarkan screenshot spreadsheet Anda jika header tidak terdeteksi
+            if (idxDSR === -1) idxDSR = 0;        // Kolom A
+            if (idxCode === -1) idxCode = 1;      // Kolom B
+            if (idxName === -1) idxName = 2;      // Kolom C
+            if (idxProgram === -1) idxProgram = 6;// Kolom G
+            if (idxTarget === -1) idxTarget = 7;  // Kolom H
+            if (idxInvoice === -1) idxInvoice = 8;// Kolom I
+            if (idxPO === -1) idxPO = 9;          // Kolom J
+
+            rawData = [];
+
+            // Proses baris data (abaikan baris 0 / header)
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                if (!row || row.length <= 1) continue;
+
+                const dsrVal = row[idxDSR] ? row[idxDSR].trim() : "";
+                const codeVal = row[idxCode] ? row[idxCode].trim() : "";
+                const nameVal = row[idxName] ? row[idxName].trim() : "";
+                const programVal = row[idxProgram] ? row[idxProgram].trim() : "";
+                
+                const targetVal = row[idxTarget] ? parseInt(row[idxTarget].replace(/[^0-9]/g, '')) || 0 : 0;
+                const invoiceVal = row[idxInvoice] ? parseInt(row[idxInvoice].replace(/[^0-9]/g, '')) || 0 : 0;
+                const poVal = row[idxPO] ? parseInt(row[idxPO].replace(/[^0-9]/g, '')) || 0 : 0;
+
+                if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
+                    rawData.push({
+                        dsr: dsrVal,
+                        code: codeVal,
+                        name: nameVal,
+                        program: programVal,
+                        target: targetVal,
+                        invoice: invoiceVal,
+                        po: poVal
+                    });
+                }
+            }
+
+            initDSRFilter();
+            renderDashboard();
         }
 
         function initDSRFilter() {
@@ -240,7 +274,7 @@
             });
         }
 
-        // Jalankan pengambilan data saat halaman dibuka
+        // Jalankan saat halaman dibuka
         fetchCSVData();
     </script>
 </body>
