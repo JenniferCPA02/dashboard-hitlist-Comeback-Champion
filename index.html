@@ -6,7 +6,7 @@
     <title>Monitoring Dashboard DSR - Program Comeback Champion</title>
     <!-- Tailwind CSS untuk Desain Visual Modern -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse Library untuk membaca CSV Google Sheets secara langsung -->
+    <!-- PapaParse Library untuk membaca CSV Google Sheets -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
@@ -31,7 +31,7 @@
             </div>
         </div>
 
-        <!-- TAB NAVIGATION (2 DASHBOARD DALAM 1 LINK) -->
+        <!-- TAB NAVIGATION -->
         <div class="flex border-b border-slate-300 gap-2">
             <button id="tabAll" onclick="switchTab('ALL')" class="py-3 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 transition-all">
                 1. Semua Data (Hitlist Focus & 0)
@@ -93,40 +93,60 @@
     </div>
 
     <script>
-        // Link CSV Google Spreadsheet Anda
-        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQzNZrLYIEfAFETq2GNFHxgC_eyNkFb5DGVcknd6sAOf5pXdKWkqXBCFENKEibP3g/pub?output=csv";
+        // LINK PUBLIK CSV
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?output=csv";
 
         let rawData = [];
         let activeTab = 'ALL';
 
-        // Load data CSV langsung dari Google Sheets
+        // Helper function untuk mencari value kolom berdasarkan beberapa variasi nama header
+        function getVal(row, possibleKeys) {
+            for (let key of possibleKeys) {
+                for (let actualKey in row) {
+                    if (actualKey.trim().toLowerCase() === key.toLowerCase()) {
+                        return row[actualKey] || "";
+                    }
+                }
+            }
+            return "";
+        }
+
         function fetchCSVData() {
             Papa.parse(CSV_URL, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    rawData = results.data.map(row => ({
-                        dsr: (row["DSR"] || "").trim(),
-                        code: (row["Customer Code"] || "").trim(),
-                        name: (row["Customer Name"] || "").trim(),
-                        program: (row["Eligible Program"] || "").trim(),
-                        target: parseInt(row["Target (Drum)"] || row["Target"] || 0) || 0,
-                        invoice: parseInt(row["Qty Invoice"] || 0) || 0,
-                        po: parseInt(row["Qty PO"] || 0) || 0
-                    })).filter(item => item.dsr !== "");
+                    rawData = results.data.map(row => {
+                        const dsrVal = getVal(row, ["DSR"]);
+                        const codeVal = getVal(row, ["Customer Code", "Code"]);
+                        const nameVal = getVal(row, ["Customer Name", "Name"]);
+                        const programVal = getVal(row, ["Eligible Program", "Program"]);
+                        const targetVal = getVal(row, ["Target (Drum)", "Target"]);
+                        const invoiceVal = getVal(row, ["Qty Invoice", "Invoice"]);
+                        const poVal = getVal(row, ["Qty PO", "PO"]);
+
+                        return {
+                            dsr: dsrVal.trim(),
+                            code: codeVal.trim(),
+                            name: nameVal.trim(),
+                            program: programVal.trim(),
+                            target: parseInt(targetVal) || 0,
+                            invoice: parseInt(invoiceVal) || 0,
+                            po: parseInt(poVal) || 0
+                        };
+                    }).filter(item => item.dsr !== "");
 
                     initDSRFilter();
                     renderDashboard();
                 },
                 error: function(err) {
-                    alert("Gagal memuat data dari Google Sheets.");
+                    alert("Gagal memuat data dari spreadsheet. Pastikan koneksi aman.");
                     console.error(err);
                 }
             });
         }
 
-        // Memuat daftar DSR ke Dropdown Filter
         function initDSRFilter() {
             const select = document.getElementById('dsrSelect');
             const currentValue = select.value;
@@ -145,7 +165,6 @@
             }
         }
 
-        // Beralih antara Tab Semua Data vs Khusus Hitlist Focus
         function switchTab(tab) {
             activeTab = tab;
             const tabAll = document.getElementById('tabAll');
@@ -164,11 +183,9 @@
             renderDashboard();
         }
 
-        // Render Ringkasan & Tabel
         function renderDashboard() {
             const selectedDSR = document.getElementById('dsrSelect').value;
             
-            // 1. Filter Data Berdasarkan DSR & Tab Terpilih
             let filtered = rawData.filter(item => {
                 const matchDSR = (selectedDSR === 'ALL') || (item.dsr === selectedDSR);
                 const isFocus = item.program.toLowerCase().includes('focus');
@@ -176,10 +193,10 @@
                 return matchDSR && matchTab;
             });
 
-            // 2. Urutkan Nama Customer Berurutan A-Z
+            // Urutkan A-Z berdasarkan Nama Customer
             filtered.sort((a, b) => a.name.localeCompare(b.name));
 
-            // 3. Hitung Ringkasan (Summary)
+            // Hitung ringkasan
             let totalPO = 0, totalInvoice = 0, totalSisa = 0;
             filtered.forEach(i => {
                 totalPO += i.po;
@@ -193,7 +210,6 @@
             document.getElementById('sumInvoice').innerText = totalInvoice;
             document.getElementById('sumSisa').innerText = totalSisa;
 
-            // 4. Render Tabel Data
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = '';
 
@@ -212,7 +228,7 @@
                     <td class="p-4 font-semibold text-slate-800">${item.name}</td>
                     <td class="p-4">
                         <span class="text-xs px-2.5 py-1 rounded-md ${item.program.toLowerCase().includes('focus') ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-slate-100 text-slate-500'}">
-                            ${item.program || '-'}
+                            ${item.program || '0'}
                         </span>
                     </td>
                     <td class="p-4 text-center font-medium">${item.target}</td>
@@ -224,7 +240,7 @@
             });
         }
 
-        // Jalankan saat pertama kali halaman dibuka
+        // Jalankan pengambilan data saat halaman dibuka
         fetchCSVData();
     </script>
 </body>
