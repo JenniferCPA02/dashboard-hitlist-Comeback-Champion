@@ -93,12 +93,8 @@
     </div>
 
     <script>
-        // Direct link berdasarkan ID Google Sheets & tab 'Monitoring Program' Anda
-        const SHEET_ID = "1zL5pGy8mr3snFyb6HLY04gjYFXtEhVMI0w76K_veFPc";
-        const GID = "915844260";
-        
-        const DIRECT_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-        const GVIZ_CSV = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
+        // Link CSV Publik Baru Anda
+        const PUBLISHED_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?gid=915844260&single=true&output=csv";
 
         let rawData = [];
         let activeTab = 'ALL';
@@ -107,15 +103,14 @@
             const statusEl = document.getElementById('statusMessage');
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
-            const urlsToTry = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(DIRECT_CSV)}`,
-                `https://corsproxy.io/?${encodeURIComponent(DIRECT_CSV)}`,
-                DIRECT_CSV,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(GVIZ_CSV)}`,
-                GVIZ_CSV
-            ];
-
             let csvText = null;
+
+            // Daftar opsi pencobaan koneksi langsung dan melalui proxy jika diblokir browser
+            const urlsToTry = [
+                PUBLISHED_CSV_URL,
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(PUBLISHED_CSV_URL)}`,
+                `https://corsproxy.io/?${encodeURIComponent(PUBLISHED_CSV_URL)}`
+            ];
 
             for (let url of urlsToTry) {
                 try {
@@ -128,12 +123,12 @@
                         }
                     }
                 } catch (e) {
-                    console.warn("Mencoba URL berikutnya karena:", url, e);
+                    console.warn("Mencoba jalur koneksi berikutnya...", e);
                 }
             }
 
             if (!csvText) {
-                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan file Google Sheets sudah terbuka publik.";
+                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan koneksi internet stabil.";
                 return;
             }
 
@@ -161,7 +156,7 @@
             let idxInvoice = headers.findIndex(h => h.includes('invoice'));
             let idxPO = headers.findIndex(h => h.includes('po'));
 
-            // Indeks posisi kolom berdasarkan foto Google Sheets Anda (A, B, C, G, H, I, J)
+            // Penentuan indeks default berdasarkan urutan kolom di Google Sheets
             if (idxDSR === -1) idxDSR = 0;        // Kolom A
             if (idxCode === -1) idxCode = 1;      // Kolom B
             if (idxName === -1) idxName = 2;      // Kolom C
