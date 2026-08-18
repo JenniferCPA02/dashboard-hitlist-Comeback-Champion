@@ -9,7 +9,7 @@
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
 
-    <div class="max-w-7xl mx-auto space-y-6">
+    <div class="max-w-[95%] mx-auto space-y-6">
         
         <!-- HEADER & FILTER DSR -->
         <div class="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-200 gap-4">
@@ -69,19 +69,21 @@
                 <table class="w-full text-left text-sm text-slate-600">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
                         <tr>
-                            <th class="p-4">DSR</th>
-                            <th class="p-4">CUSTOMER CODE</th>
-                            <th class="p-4">CUSTOMER NAME</th>
-                            <th class="p-4">ELIGIBLE PROGRAM</th>
-                            <th class="p-4 text-center">TARGET</th>
-                            <th class="p-4 text-center">QTY PO</th>
-                            <th class="p-4 text-center">QTY INVOICE</th>
-                            <th class="p-4 text-center">SISA TARGET</th>
+                            <th class="p-4 whitespace-nowrap">DSR</th>
+                            <th class="p-4 whitespace-nowrap">CUSTOMER CODE</th>
+                            <th class="p-4 whitespace-nowrap">CUSTOMER NAME</th>
+                            <th class="p-4 whitespace-nowrap">ELIGIBLE PROGRAM</th>
+                            <th class="p-4 text-center whitespace-nowrap">TARGET</th>
+                            <th class="p-4 text-center whitespace-nowrap">QTY PO</th>
+                            <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
+                            <th class="p-4 text-center whitespace-nowrap">SISA TARGET</th>
+                            <th class="p-4 text-center whitespace-nowrap">WIN JULY 2026</th>
+                            <th class="p-4 whitespace-nowrap">REMARKS</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="8" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
+                            <td colspan="10" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -133,9 +135,11 @@
                     return parseInt(clean) || 0;
                 };
 
-                const targetVal = parseNum(row[7]);  // Kolom H (Target)
-                const invoiceVal = parseNum(row[8]); // Kolom I (Qty Invoice)
-                const poVal = parseNum(row[9]);      // Kolom J (Qty PO)
+                const targetVal = parseNum(row[7]);   // Kolom H (Target)
+                const invoiceVal = parseNum(row[8]);  // Kolom I (Qty Invoice)
+                const poVal = parseNum(row[9]);       // Kolom J (Qty PO)
+                const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY 2026)
+                const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
                     rawData.push({
@@ -145,7 +149,9 @@
                         program: programVal,
                         target: targetVal,
                         invoice: invoiceVal,
-                        po: poVal
+                        po: poVal,
+                        winJuly: winJulyVal,
+                        remarks: remarksVal
                     });
                 }
             }
@@ -232,7 +238,7 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
                 return;
             }
 
@@ -241,18 +247,20 @@
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
-                    <td class="p-4 font-medium text-slate-700">${item.dsr}</td>
-                    <td class="p-4 font-mono text-xs text-slate-500">${item.code}</td>
-                    <td class="p-4 font-semibold text-slate-800">${item.name}</td>
-                    <td class="p-4">
+                    <td class="p-4 font-medium text-slate-700 whitespace-nowrap">${item.dsr}</td>
+                    <td class="p-4 font-mono text-xs text-slate-500 whitespace-nowrap">${item.code}</td>
+                    <td class="p-4 font-semibold text-slate-800 whitespace-nowrap">${item.name}</td>
+                    <td class="p-4 whitespace-nowrap">
                         <span class="text-xs px-2.5 py-1 rounded-md ${item.program.toLowerCase().includes('focus') ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-slate-100 text-slate-500'}">
                             ${item.program}
                         </span>
                     </td>
-                    <td class="p-4 text-center font-medium">${item.target.toLocaleString('id-ID')}</td>
-                    <td class="p-4 text-center font-semibold text-blue-600">${item.po.toLocaleString('id-ID')}</td>
-                    <td class="p-4 text-center font-semibold text-emerald-600">${item.invoice.toLocaleString('id-ID')}</td>
-                    <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'}">${sisa > 0 ? sisa.toLocaleString('id-ID') : 0}</td>
+                    <td class="p-4 text-center font-medium whitespace-nowrap">${item.target.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold text-blue-600 whitespace-nowrap">${item.po.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold text-emerald-600 whitespace-nowrap">${item.invoice.toLocaleString('id-ID')}</td>
+                    <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'} whitespace-nowrap">${sisa > 0 ? sisa.toLocaleString('id-ID') : 0}</td>
+                    <td class="p-4 text-center font-medium whitespace-nowrap">${item.winJuly}</td>
+                    <td class="p-4 font-medium text-slate-600 whitespace-nowrap">${item.remarks}</td>
                 `;
                 tbody.appendChild(tr);
             });
