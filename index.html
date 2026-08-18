@@ -107,13 +107,14 @@
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
             try {
+                // Menggunakan fetch dengan penanganan pengalihan otomatis dari Apps Script
                 const res = await fetch(APPS_SCRIPT_URL, {
                     method: 'GET',
                     redirect: 'follow'
                 });
 
                 if (!res.ok) {
-                    throw new Error(`HTTP Error Status: ${res.status}`);
+                    throw new Error(`HTTP Status ${res.status}`);
                 }
 
                 const rows = await res.json();
@@ -121,45 +122,48 @@
             } catch (e) {
                 console.error("Fetch Error:", e);
                 if (statusEl) {
-                    statusEl.innerText = "Gagal memuat data. Mohon pastikan deployment Apps Script diset ke 'Anyone' (Siapa saja).";
+                    statusEl.innerText = "Gagal memuat data. Mohon pastikan Akses Deployment Apps Script diset ke 'Anyone' (Siapa Saja) dan versi baru sudah ter-deploy.";
                 }
             }
         }
 
         function processParsedRows(rows) {
-            if (!rows || rows.length < 2) {
-                document.getElementById('statusMessage').innerText = "Data kosong atau tidak ditemukan.";
+            if (!rows || !Array.isArray(rows) || rows.length < 2) {
+                const statusEl = document.getElementById('statusMessage');
+                if (statusEl) statusEl.innerText = "Data kosong atau tidak ditemukan.";
                 return;
             }
 
             rawData = [];
 
+            // Lewati baris header (index 0)
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
-                if (!row || row.length <= 1) continue;
+                if (!row || !Array.isArray(row) || row.length === 0) continue;
 
-                // Indeks Array Kolom Sheet:
+                // Indeks Array Kolom Sheet yang Tepat:
                 // A (0): DSR | C (2): Customer Name | G (6): Eligible Program
                 // H (7): Target | I (8): Qty Invoice | J (9): Qty PO
                 // M (12): WIN JULY | N (13): Remarks / Issue | O (14): WIN July & Aug
-                const dsrVal = row[0] ? String(row[0]).trim() : "";
-                const nameVal = row[2] ? String(row[2]).trim() : "";
-                const programVal = row[6] ? String(row[6]).trim() : "0";
+                const dsrVal = row[0] !== undefined && row[0] !== null ? String(row[0]).trim() : "";
+                const nameVal = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : "";
+                const programVal = row[6] !== undefined && row[6] !== null ? String(row[6]).trim() : "0";
                 
                 const parseNum = (val) => {
-                    if (!val) return 0;
-                    let clean = String(val).replace(/[^0-9]/g, '');
-                    return parseInt(clean) || 0;
+                    if (val === undefined || val === null || val === "") return 0;
+                    if (typeof val === 'number') return val;
+                    let clean = String(val).replace(/[^0-9.-]/g, '');
+                    return parseInt(clean, 10) || 0;
                 };
 
                 const targetVal = parseNum(row[7]);
                 const invoiceVal = parseNum(row[8]);
                 const poVal = parseNum(row[9]);
-                const winJulyVal = row[12] ? String(row[12]).trim() : "-";
-                const remarksVal = row[13] ? String(row[13]).trim() : "-";
+                const winJulyVal = row[12] !== undefined && row[12] !== null ? String(row[12]).trim() : "-";
+                const remarksVal = row[13] !== undefined && row[13] !== null ? String(row[13]).trim() : "-";
                 
-                // Pembacaan Kolom O (WIN July & Aug) untuk kalkulasi Succession Rate
-                const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
+                // Pengecekan Kolom O (WIN July & Aug) untuk hitungan Succession Rate (1, YES, atau WIN)
+                const winJulyAugRaw = row[14] !== undefined && row[14] !== null ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
                     winJulyAugRaw.toUpperCase() === "YES" || 
@@ -295,6 +299,7 @@
             });
         }
 
+        // Jalankan saat halaman dibuka
         fetchData();
     </script>
 </body>
