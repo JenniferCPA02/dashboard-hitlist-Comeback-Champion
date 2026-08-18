@@ -91,7 +91,7 @@
     </div>
 
     <script>
-        // URL WEB APP APPS SCRIPT ANDA
+        // URL WEB APP APPS SCRIPT
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8Egv5-WVNHNkTIeyfBFngbzcFbpCiZM0wYG3muJE8JyFMc_cWZJ2KjdSP0I3j13syCQ/exec";
 
         let rawData = [];
@@ -107,7 +107,7 @@
                 processParsedRows(rows);
             } catch (e) {
                 console.error(e);
-                if (statusEl) statusEl.innerText = "Gagal memuat data. Pastikan Web App Apps Script sudah di-deploy dengan akses 'Anyone'.";
+                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan koneksi internet stabil.";
             }
         }
 
@@ -117,23 +117,14 @@
                 return;
             }
 
-            const headers = rows[0].map(h => String(h).trim().toLowerCase());
-            
-            let idxDSR = headers.findIndex(h => h.includes('dsr'));
-            let idxCode = headers.findIndex(h => h.includes('code') || h.includes('kode'));
-            let idxName = headers.findIndex(h => h.includes('name') || h.includes('nama') || h.includes('customer'));
-            let idxProgram = headers.findIndex(h => h.includes('program') || h.includes('eligible'));
-            let idxTarget = headers.findIndex(h => h.includes('target'));
-            let idxInvoice = headers.findIndex(h => h.includes('invoice'));
-            let idxPO = headers.findIndex(h => h.includes('po'));
-
-            if (idxDSR === -1) idxDSR = 0;
-            if (idxCode === -1) idxCode = 1;
-            if (idxName === -1) idxName = 2;
-            if (idxProgram === -1) idxProgram = 6;
-            if (idxTarget === -1) idxTarget = 7;
-            if (idxInvoice === -1) idxInvoice = 8;
-            if (idxPO === -1) idxPO = 9;
+            // INDEX KOLOM BERDASARKAN GOOGLE SHEETS
+            const idxDSR = 0;      // Kolom A
+            const idxCode = 1;     // Kolom B
+            const idxName = 2;     // Kolom C (Customer Name)
+            const idxProgram = 6;  // Kolom G (Eligible Program)
+            const idxTarget = 7;   // Kolom H (Target)
+            const idxInvoice = 8;  // Kolom I (Qty Invoice)
+            const idxPO = 9;       // Kolom J (Qty PO)
 
             rawData = [];
 
@@ -144,7 +135,7 @@
                 const dsrVal = row[idxDSR] ? String(row[idxDSR]).trim() : "";
                 const codeVal = row[idxCode] ? String(row[idxCode]).trim() : "";
                 const nameVal = row[idxName] ? String(row[idxName]).trim() : "";
-                const programVal = row[idxProgram] ? String(row[idxProgram]).trim() : "";
+                const programVal = row[idxProgram] ? String(row[idxProgram]).trim() : "0";
                 
                 const parseNum = (val) => {
                     if (!val) return 0;
@@ -252,7 +243,7 @@
                     <td class="p-4 font-semibold text-slate-800">${item.name}</td>
                     <td class="p-4">
                         <span class="text-xs px-2.5 py-1 rounded-md ${item.program.toLowerCase().includes('focus') ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-slate-100 text-slate-500'}">
-                            ${item.program || '0'}
+                            ${item.program}
                         </span>
                     </td>
                     <td class="p-4 text-center font-medium">${item.target.toLocaleString('id-ID')}</td>
