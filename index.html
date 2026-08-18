@@ -6,8 +6,6 @@
     <title>Dashboard Monitoring Hitlist - Program Comeback Champion</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- PapaParse Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body class="bg-slate-100 text-gray-800 font-sans p-4 md:p-8">
 
@@ -25,7 +23,7 @@
                 <select id="dsrSelect" onchange="renderDashboard()" class="bg-slate-50 border border-slate-300 text-slate-900 rounded-lg p-2.5 font-medium focus:ring-2 focus:ring-blue-500 outline-none">
                     <option value="ALL">-- Semua DSR --</option>
                 </select>
-                <button onclick="fetchCSVData()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-2.5 rounded-lg text-sm transition-all border border-blue-200">
+                <button onclick="fetchData()" class="bg-blue-50 hover:bg-blue-100 text-blue-600 font-semibold px-3 py-2.5 rounded-lg text-sm transition-all border border-blue-200">
                     🔄 Refresh
                 </button>
             </div>
@@ -93,56 +91,29 @@
     </div>
 
     <script>
-        // Link CSV Publik Baru Anda
-        const PUBLISHED_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQdvqJF7AQP9M2VeUfHRwr40O1D5mlij2haG5EZpywJ7YXPQ7zWeiJnqFykmtCo5Ih7TvKDLbtXyy28/pub?gid=915844260&single=true&output=csv";
+        // URL WEB APP APPS SCRIPT ANDA
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby8Egv5-WVNHNkTIeyfBFngbzcFbpCiZM0wYG3muJE8JyFMc_cWZJ2KjdSP0I3j13syCQ/exec";
 
         let rawData = [];
         let activeTab = 'ALL';
 
-        async function fetchCSVData() {
+        async function fetchData() {
             const statusEl = document.getElementById('statusMessage');
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
-            let csvText = null;
-
-            // Daftar opsi pencobaan koneksi langsung dan melalui proxy jika diblokir browser
-            const urlsToTry = [
-                PUBLISHED_CSV_URL,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(PUBLISHED_CSV_URL)}`,
-                `https://corsproxy.io/?${encodeURIComponent(PUBLISHED_CSV_URL)}`
-            ];
-
-            for (let url of urlsToTry) {
-                try {
-                    let res = await fetch(url);
-                    if (res.ok) {
-                        let text = await res.text();
-                        if (text && text.trim().length > 0 && !text.includes('<!DOCTYPE html>')) {
-                            csvText = text;
-                            break;
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Mencoba jalur koneksi berikutnya...", e);
-                }
+            try {
+                const res = await fetch(APPS_SCRIPT_URL);
+                const rows = await res.json();
+                processParsedRows(rows);
+            } catch (e) {
+                console.error(e);
+                if (statusEl) statusEl.innerText = "Gagal memuat data. Pastikan Web App Apps Script sudah di-deploy dengan akses 'Anyone'.";
             }
-
-            if (!csvText) {
-                if (statusEl) statusEl.innerText = "Gagal memuat data. Mohon pastikan koneksi internet stabil.";
-                return;
-            }
-
-            Papa.parse(csvText, {
-                skipEmptyLines: true,
-                complete: function(results) {
-                    processParsedRows(results.data);
-                }
-            });
         }
 
         function processParsedRows(rows) {
             if (!rows || rows.length < 2) {
-                document.getElementById('statusMessage').innerText = "Data CSV kosong atau tidak ditemukan.";
+                document.getElementById('statusMessage').innerText = "Data kosong atau tidak ditemukan.";
                 return;
             }
 
@@ -156,14 +127,13 @@
             let idxInvoice = headers.findIndex(h => h.includes('invoice'));
             let idxPO = headers.findIndex(h => h.includes('po'));
 
-            // Penentuan indeks default berdasarkan urutan kolom di Google Sheets
-            if (idxDSR === -1) idxDSR = 0;        // Kolom A
-            if (idxCode === -1) idxCode = 1;      // Kolom B
-            if (idxName === -1) idxName = 2;      // Kolom C
-            if (idxProgram === -1) idxProgram = 6;// Kolom G
-            if (idxTarget === -1) idxTarget = 7;  // Kolom H
-            if (idxInvoice === -1) idxInvoice = 8;// Kolom I
-            if (idxPO === -1) idxPO = 9;          // Kolom J
+            if (idxDSR === -1) idxDSR = 0;
+            if (idxCode === -1) idxCode = 1;
+            if (idxName === -1) idxName = 2;
+            if (idxProgram === -1) idxProgram = 6;
+            if (idxTarget === -1) idxTarget = 7;
+            if (idxInvoice === -1) idxInvoice = 8;
+            if (idxPO === -1) idxPO = 9;
 
             rawData = [];
 
@@ -294,7 +264,7 @@
             });
         }
 
-        fetchCSVData();
+        fetchData();
     </script>
 </body>
 </html>
