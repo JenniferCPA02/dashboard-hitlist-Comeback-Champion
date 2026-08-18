@@ -40,10 +40,15 @@
         </div>
 
         <!-- SUMMARY CARDS -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                 <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL CUSTOMER</span>
                 <p id="sumCustomer" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
+            </div>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">SUCCESSION RATE</span>
+                <p id="sumSuccessRate" class="text-3xl font-extrabold text-indigo-600 mt-1">0%</p>
+                <span id="sumSuccessCount" class="text-xs text-slate-400 font-medium">(0 / 0 WIN)</span>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                 <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL QTY PO</span>
@@ -138,6 +143,10 @@
                 const poVal = parseNum(row[9]);       // Kolom J (Qty PO)
                 const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY)
                 const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
+                
+                // Kolom O (WIN July & Aug) - Memeriksa nilai 1 atau 'YES' / 'WIN'
+                const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
+                const isWinCombined = (winJulyAugRaw === "1" || winJulyAugRaw.toUpperCase().includes("WIN") || winJulyAugRaw.toUpperCase().includes("YES"));
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
                     rawData.push({
@@ -148,7 +157,8 @@
                         invoice: invoiceVal,
                         po: poVal,
                         winJuly: winJulyVal,
-                        remarks: remarksVal
+                        remarks: remarksVal,
+                        isWinCombined: isWinCombined
                     });
                 }
             }
@@ -218,15 +228,21 @@
                 return nameA.localeCompare(nameB, 'id', { sensitivity: 'base' });
             });
 
-            let totalPO = 0, totalInvoice = 0, totalSisa = 0;
+            let totalPO = 0, totalInvoice = 0, totalSisa = 0, winCount = 0;
             filtered.forEach(i => {
                 totalPO += i.po;
                 totalInvoice += i.invoice;
                 const sisa = i.target - i.invoice;
                 totalSisa += (sisa > 0 ? sisa : 0);
+                if (i.isWinCombined) winCount++;
             });
 
-            document.getElementById('sumCustomer').innerText = filtered.length;
+            const totalCust = filtered.length;
+            const successRate = totalCust > 0 ? ((winCount / totalCust) * 100).toFixed(2) : "0.00";
+
+            document.getElementById('sumCustomer').innerText = totalCust.toLocaleString('id-ID');
+            document.getElementById('sumSuccessRate').innerText = `${successRate}%`;
+            document.getElementById('sumSuccessCount').innerText = `(${winCount} / ${totalCust} WIN)`;
             document.getElementById('sumPO').innerText = totalPO.toLocaleString('id-ID');
             document.getElementById('sumInvoice').innerText = totalInvoice.toLocaleString('id-ID');
             document.getElementById('sumSisa').innerText = totalSisa.toLocaleString('id-ID');
