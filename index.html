@@ -45,10 +45,10 @@
                 <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL CUSTOMER</span>
                 <p id="sumCustomer" class="text-3xl font-extrabold text-slate-800 mt-1">0</p>
             </div>
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">SUCCESSION RATE</span>
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-indigo-100 bg-indigo-50/30">
+                <span class="text-indigo-600 text-xs font-bold uppercase tracking-wider">SUCCESSION RATE</span>
                 <p id="sumSuccessRate" class="text-3xl font-extrabold text-indigo-600 mt-1">0%</p>
-                <span id="sumSuccessCount" class="text-xs text-slate-400 font-medium">(0 / 0 WIN)</span>
+                <span id="sumSuccessCount" class="text-xs text-indigo-500 font-semibold">(0 / 0 WIN)</span>
             </div>
             <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
                 <span class="text-slate-500 text-xs font-bold uppercase tracking-wider">TOTAL QTY PO</span>
@@ -97,7 +97,8 @@
     </div>
 
     <script>
-        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSWOJmuAsVdhcpV6qM259OQM6DvSgkt0HxBXAzxKe6UkWIJmdRY3Lll7E-PZcsSHKC/exec";
+        // URL Apps Script Terbaru dari Anda
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvxvkA-2Am5dcJib3pVJa5eRyFxW2vrspU9zR636swLN51WZ0Ow5u_ScVUnk6sp-PXbA/exec";
 
         let rawData = [];
         let activeTab = 'ALL';
@@ -144,9 +145,14 @@
                 const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY)
                 const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
                 
-                // Kolom O (WIN July & Aug) - Memeriksa nilai 1 atau 'YES' / 'WIN'
+                // Kolom O (WIN July & Aug) - Memeriksa nilai angka 1, 'YES', 'WIN', atau terisi data
                 const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
-                const isWinCombined = (winJulyAugRaw === "1" || winJulyAugRaw.toUpperCase().includes("WIN") || winJulyAugRaw.toUpperCase().includes("YES"));
+                const isWinCombined = (
+                    winJulyAugRaw === "1" || 
+                    winJulyAugRaw.toUpperCase() === "YES" || 
+                    winJulyAugRaw.toUpperCase() === "WIN" ||
+                    (winJulyAugRaw !== "" && winJulyAugRaw !== "0" && winJulyAugRaw !== "-")
+                );
 
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
                     rawData.push({
