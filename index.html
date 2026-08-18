@@ -97,6 +97,7 @@
     </div>
 
     <script>
+        // URL Apps Script Terbaru
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby053m8rT3v_J8DK5pmLhgEhomg6AMes5Y68qJwSNdjT2PuLd5nYC1HOct9TvVKBE3VpA/exec";
 
         let rawData = [];
@@ -128,9 +129,9 @@
                 const row = rows[i];
                 if (!row || row.length <= 1) continue;
 
-                const dsrVal = row[0] ? String(row[0]).trim() : "";
-                const nameVal = row[2] ? String(row[2]).trim() : "";
-                const programVal = row[6] ? String(row[6]).trim() : "0";
+                const dsrVal = row[0] ? String(row[0]).trim() : "";       // Kolom A (DSR)
+                const nameVal = row[2] ? String(row[2]).trim() : "";      // Kolom C (Customer Name)
+                const programVal = row[6] ? String(row[6]).trim() : "0";  // Kolom G (Eligible Program)
                 
                 const parseNum = (val) => {
                     if (!val) return 0;
@@ -138,12 +139,13 @@
                     return parseInt(clean) || 0;
                 };
 
-                const targetVal = parseNum(row[7]);
-                const invoiceVal = parseNum(row[8]);
-                const poVal = parseNum(row[9]);
-                const winJulyVal = row[12] ? String(row[12]).trim() : "-";
-                const remarksVal = row[13] ? String(row[13]).trim() : "-";
+                const targetVal = parseNum(row[7]);   // Kolom H (Target)
+                const invoiceVal = parseNum(row[8]);  // Kolom I (Qty Invoice)
+                const poVal = parseNum(row[9]);       // Kolom J (Qty PO)
+                const winJulyVal = row[12] ? String(row[12]).trim() : "-"; // Kolom M (WIN JULY)
+                const remarksVal = row[13] ? String(row[13]).trim() : "-"; // Kolom N (Remarks)
                 
+                // Kolom O (WIN July & Aug) - Memeriksa nilai angka 1, 'YES', 'WIN', atau terisi data
                 const winJulyAugRaw = row[14] ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
@@ -217,6 +219,7 @@
                 return matchDSR && matchTab;
             });
 
+            // URUTKAN BERDASARKAN DSR A-Z DULU, KEMUDIAN NAMA CUSTOMER A-Z
             filtered.sort((a, b) => {
                 const dsrA = String(a.dsr).trim();
                 const dsrB = String(b.dsr).trim();
