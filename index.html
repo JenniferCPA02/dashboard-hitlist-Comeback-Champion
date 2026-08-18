@@ -70,7 +70,6 @@
                     <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
                         <tr>
                             <th class="p-4 whitespace-nowrap">DSR</th>
-                            <th class="p-4 whitespace-nowrap">CUSTOMER CODE</th>
                             <th class="p-4 whitespace-nowrap">CUSTOMER NAME</th>
                             <th class="p-4 whitespace-nowrap">ELIGIBLE PROGRAM</th>
                             <th class="p-4 text-center whitespace-nowrap">TARGET</th>
@@ -83,7 +82,7 @@
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="10" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
+                            <td colspan="9" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -125,7 +124,6 @@
                 if (!row || row.length <= 1) continue;
 
                 const dsrVal = row[0] ? String(row[0]).trim() : "";       // Kolom A (DSR)
-                const codeVal = row[1] ? String(row[1]).trim() : "";      // Kolom B (Customer Code)
                 const nameVal = row[2] ? String(row[2]).trim() : "";      // Kolom C (Customer Name)
                 const programVal = row[6] ? String(row[6]).trim() : "0";  // Kolom G (Eligible Program)
                 
@@ -144,7 +142,6 @@
                 if (dsrVal !== "" && dsrVal.toLowerCase() !== "dsr") {
                     rawData.push({
                         dsr: dsrVal,
-                        code: codeVal,
                         name: nameVal,
                         program: programVal,
                         target: targetVal,
@@ -238,7 +235,7 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
                 return;
             }
 
@@ -248,7 +245,6 @@
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
                     <td class="p-4 font-medium text-slate-700 whitespace-nowrap">${item.dsr}</td>
-                    <td class="p-4 font-mono text-xs text-slate-500 whitespace-nowrap">${item.code}</td>
                     <td class="p-4 font-semibold text-slate-800 whitespace-nowrap">${item.name}</td>
                     <td class="p-4 whitespace-nowrap">
                         <span class="text-xs px-2.5 py-1 rounded-md ${item.program.toLowerCase().includes('focus') ? 'bg-blue-100 text-blue-700 font-semibold' : 'bg-slate-100 text-slate-500'}">
