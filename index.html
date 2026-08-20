@@ -132,7 +132,7 @@
         }
 
         function handleAppsScriptData(res) {
-            // Render Notifikasi
+            // Render Banner Notifikasi
             const notifContainer = document.getElementById('notifContainer');
             const notifList = document.getElementById('notifList');
             notifList.innerHTML = '';
@@ -148,7 +148,7 @@
                 notifContainer.classList.add('hidden');
             }
 
-            // Render Table Data
+            // Render Data Tabel
             const rows = res ? res.rows : null;
             if (!rows || !Array.isArray(rows) || rows.length <= 1) {
                 const statusEl = document.getElementById('statusMessage');
