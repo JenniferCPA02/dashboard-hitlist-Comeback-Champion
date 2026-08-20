@@ -29,6 +29,17 @@
             </div>
         </div>
 
+        <!-- BANNER INFO PENTING (DARI SHEET NOTIFIKASI) -->
+        <div id="notifContainer" class="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm hidden">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-lg">📢</span>
+                <h2 class="font-bold text-amber-900 uppercase tracking-wider text-sm">INFO PENTING</h2>
+            </div>
+            <ul id="notifList" class="list-disc list-inside space-y-1 text-sm font-medium text-amber-800 pl-1">
+                <!-- Poin-poin informasi dari Sheet Notifikasi akan muncul di sini -->
+            </ul>
+        </div>
+
         <!-- TAB NAVIGATION -->
         <div class="flex border-b border-slate-300 gap-2">
             <button id="tabAll" onclick="switchTab('ALL')" class="py-3 px-6 font-semibold border-b-2 border-blue-600 text-blue-600 transition-all">
@@ -120,7 +131,25 @@
             document.body.appendChild(script);
         }
 
-        function handleAppsScriptData(rows) {
+        function handleAppsScriptData(res) {
+            // Render Notifikasi
+            const notifContainer = document.getElementById('notifContainer');
+            const notifList = document.getElementById('notifList');
+            notifList.innerHTML = '';
+
+            if (res && res.notifications && Array.isArray(res.notifications) && res.notifications.length > 0) {
+                res.notifications.forEach(item => {
+                    const li = document.createElement('li');
+                    li.innerText = item;
+                    notifList.appendChild(li);
+                });
+                notifContainer.classList.remove('hidden');
+            } else {
+                notifContainer.classList.add('hidden');
+            }
+
+            // Render Table Data
+            const rows = res ? res.rows : null;
             if (!rows || !Array.isArray(rows) || rows.length <= 1) {
                 const statusEl = document.getElementById('statusMessage');
                 if (statusEl) statusEl.innerText = "Data di sheet 'Monitoring Program' kosong.";
@@ -128,19 +157,6 @@
             }
 
             rawData = [];
-
-            // Pemetaan Kolom berdasarkan Spreadsheet:
-            // A (0)  : DSR
-            // C (2)  : Customer Name
-            // E (4)  : Status Customer
-            // G (6)  : Eligible Program
-            // H (7)  : Target (Drum)
-            // I (8)  : Qty Invoice
-            // J (9)  : Qty PO
-            // L (11) : WIN AUG
-            // M (12) : WIN JULY
-            // N (13) : Remarks / Issue
-            // O (14) : WIN July & Aug
 
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -281,7 +297,6 @@
             filtered.forEach(item => {
                 const sisa = item.target - item.invoice;
                 
-                // Styling warna badge WIN JULY / AUG
                 const winJulyBadge = (item.winJuly.toUpperCase() === 'YES' || item.winJuly.toUpperCase() === 'WIN') 
                     ? 'bg-emerald-100 text-emerald-700 font-bold' 
                     : 'text-slate-500';
