@@ -81,21 +81,23 @@
                 <h3 class="font-bold text-slate-700">List Detail Customer (Urut DSR & Customer A-Z)</h3>
                 <span id="badgeProgram" class="text-xs bg-slate-100 text-slate-600 font-semibold px-3 py-1 rounded-full">Menampilkan Semua Program</span>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm text-slate-600">
-                    <thead class="bg-slate-50 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200">
+            
+            <!-- STICKY HEADER CONTAINER (max height 650px dengan vertical scroll) -->
+            <div class="overflow-x-auto max-h-[650px] overflow-y-auto">
+                <table class="w-full text-left text-sm text-slate-600 border-collapse">
+                    <thead class="bg-slate-100 text-slate-700 uppercase font-semibold text-xs border-b border-slate-200 sticky top-0 z-10 shadow-sm">
                         <tr>
-                            <th class="p-4 whitespace-nowrap">DSR</th>
-                            <th class="p-4 whitespace-nowrap">CUSTOMER NAME</th>
-                            <th class="p-4 whitespace-nowrap">ELIGIBLE PROGRAM</th>
-                            <th class="p-4 text-center whitespace-nowrap">STATUS CUSTOMER</th>
-                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
-                            <th class="p-4 text-center whitespace-nowrap">TARGET</th>
-                            <th class="p-4 text-center whitespace-nowrap">QTY PO</th>
-                            <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
-                            <th class="p-4 text-center whitespace-nowrap">SISA TARGET</th>
-                            <th class="p-4 text-center whitespace-nowrap">WIN AUG</th>
-                            <th class="p-4 whitespace-nowrap">REMARKS / ISSUE</th>
+                            <th class="p-4 whitespace-nowrap bg-slate-100">DSR</th>
+                            <th class="p-4 whitespace-nowrap bg-slate-100">CUSTOMER NAME</th>
+                            <th class="p-4 whitespace-nowrap bg-slate-100">ELIGIBLE PROGRAM</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">STATUS CUSTOMER</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">WIN JULY</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">TARGET</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">QTY PO</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">QTY INVOICE</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">SISA TARGET</th>
+                            <th class="p-4 text-center whitespace-nowrap bg-slate-100">WIN AUG</th>
+                            <th class="p-4 whitespace-nowrap bg-slate-100">REMARKS / ISSUE</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
