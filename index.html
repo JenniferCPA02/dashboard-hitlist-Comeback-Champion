@@ -77,17 +77,19 @@
                             <th class="p-4 whitespace-nowrap">DSR</th>
                             <th class="p-4 whitespace-nowrap">CUSTOMER NAME</th>
                             <th class="p-4 whitespace-nowrap">ELIGIBLE PROGRAM</th>
+                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
+                            <th class="p-4 text-center whitespace-nowrap">STATUS CUSTOMER</th>
                             <th class="p-4 text-center whitespace-nowrap">TARGET</th>
                             <th class="p-4 text-center whitespace-nowrap">QTY PO</th>
                             <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
                             <th class="p-4 text-center whitespace-nowrap">SISA TARGET</th>
-                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
+                            <th class="p-4 text-center whitespace-nowrap">WIN AUG</th>
                             <th class="p-4 whitespace-nowrap">REMARKS / ISSUE</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody" class="divide-y divide-slate-100">
                         <tr>
-                            <td colspan="9" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
+                            <td colspan="11" class="p-6 text-center text-slate-400" id="statusMessage">Sedang mengambil data dari Google Sheets...</td>
                         </tr>
                     </tbody>
                 </table>
@@ -106,11 +108,9 @@
             const statusEl = document.getElementById('statusMessage');
             if (statusEl) statusEl.innerText = "Sedang mengunduh data...";
 
-            // Hapus script JSONP lama jika ada
             const oldScript = document.getElementById('jsonpScript');
             if (oldScript) oldScript.remove();
 
-            // Panggil via JSONP untuk menghindari masalah CORS
             const script = document.createElement('script');
             script.id = 'jsonpScript';
             script.src = `${APPS_SCRIPT_URL}?callback=handleAppsScriptData&_=${new Date().getTime()}`;
@@ -120,7 +120,6 @@
             document.body.appendChild(script);
         }
 
-        // Callback function untuk menangani data JSONP
         function handleAppsScriptData(rows) {
             if (!rows || !Array.isArray(rows) || rows.length <= 1) {
                 const statusEl = document.getElementById('statusMessage');
@@ -130,10 +129,18 @@
 
             rawData = [];
 
-            // Pemetaan Kolom Sheet 'Monitoring Program' (Mulai baris indeks 1):
-            // A (0) : DSR | C (2) : Customer Name | G (6) : Eligible Program
-            // H (7) : Target (Drum) | I (8) : Qty Invoice | J (9) : Qty PO
-            // M (12): WIN JULY | N (13): Remarks / Issue | O (14): WIN July & Aug
+            // Pemetaan Kolom berdasarkan Spreadsheet:
+            // A (0)  : DSR
+            // C (2)  : Customer Name
+            // E (4)  : Status Customer
+            // G (6)  : Eligible Program
+            // H (7)  : Target (Drum)
+            // I (8)  : Qty Invoice
+            // J (9)  : Qty PO
+            // L (11) : WIN AUG
+            // M (12) : WIN JULY
+            // N (13) : Remarks / Issue
+            // O (14) : WIN July & Aug
 
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -141,9 +148,9 @@
 
                 const dsrVal = row[0] !== undefined && row[0] !== null ? String(row[0]).trim() : "";
                 const nameVal = row[2] !== undefined && row[2] !== null ? String(row[2]).trim() : "";
+                const statusCustVal = row[4] !== undefined && row[4] !== null ? String(row[4]).trim() : "-";
                 const programVal = row[6] !== undefined && row[6] !== null ? String(row[6]).trim() : "0";
 
-                // Jika nama customer dan DSR kosong, lewati
                 if (!nameVal && !dsrVal) continue;
 
                 const parseNum = (val) => {
@@ -156,10 +163,10 @@
                 const targetVal = parseNum(row[7]);
                 const invoiceVal = parseNum(row[8]);
                 const poVal = parseNum(row[9]);
+                const winAugVal = row[11] !== undefined && row[11] !== null ? String(row[11]).trim() : "-";
                 const winJulyVal = row[12] !== undefined && row[12] !== null ? String(row[12]).trim() : "-";
                 const remarksVal = row[13] !== undefined && row[13] !== null ? String(row[13]).trim() : "-";
 
-                // Cek status WIN untuk Succession Rate
                 const winJulyAugRaw = row[14] !== undefined && row[14] !== null ? String(row[14]).trim() : "";
                 const isWinCombined = (
                     winJulyAugRaw === "1" || 
@@ -170,10 +177,12 @@
                 rawData.push({
                     dsr: dsrVal || "-",
                     name: nameVal || "-",
+                    statusCustomer: statusCustVal || "-",
                     program: programVal || "0",
                     target: targetVal,
                     invoice: invoiceVal,
                     po: poVal,
+                    winAug: winAugVal || "-",
                     winJuly: winJulyVal || "-",
                     remarks: remarksVal || "-",
                     isWinCombined: isWinCombined
@@ -265,12 +274,22 @@
             tbody.innerHTML = '';
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="11" class="p-6 text-center text-slate-400">Tidak ada data customer yang sesuai.</td></tr>`;
                 return;
             }
 
             filtered.forEach(item => {
                 const sisa = item.target - item.invoice;
+                
+                // Styling warna badge WIN JULY / AUG
+                const winJulyBadge = item.winJuly.toUpperCase() === 'YES' || item.winJuly.toUpperCase() === 'WIN' 
+                    ? 'bg-emerald-100 text-emerald-700 font-bold' 
+                    : 'text-slate-500';
+
+                const winAugBadge = item.winAug.toUpperCase() === 'YES' || item.winAug.toUpperCase() === 'WIN' 
+                    ? 'bg-emerald-100 text-emerald-700 font-bold' 
+                    : 'text-slate-500';
+
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
@@ -281,11 +300,21 @@
                             ${item.program}
                         </span>
                     </td>
+                    <td class="p-4 text-center whitespace-nowrap">
+                        <span class="text-xs px-2.5 py-1 rounded-md ${winJulyBadge}">
+                            ${item.winJuly}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center font-medium text-slate-600 whitespace-nowrap">${item.statusCustomer}</td>
                     <td class="p-4 text-center font-medium whitespace-nowrap">${item.target.toLocaleString('id-ID')}</td>
                     <td class="p-4 text-center font-semibold text-blue-600 whitespace-nowrap">${item.po.toLocaleString('id-ID')}</td>
                     <td class="p-4 text-center font-semibold text-emerald-600 whitespace-nowrap">${item.invoice.toLocaleString('id-ID')}</td>
                     <td class="p-4 text-center font-semibold ${sisa > 0 ? 'text-amber-500' : 'text-slate-400'} whitespace-nowrap">${sisa > 0 ? sisa.toLocaleString('id-ID') : 0}</td>
-                    <td class="p-4 text-center font-medium whitespace-nowrap">${item.winJuly}</td>
+                    <td class="p-4 text-center whitespace-nowrap">
+                        <span class="text-xs px-2.5 py-1 rounded-md ${winAugBadge}">
+                            ${item.winAug}
+                        </span>
+                    </td>
                     <td class="p-4 font-medium text-slate-600 whitespace-nowrap">${item.remarks}</td>
                 `;
                 tbody.appendChild(tr);
