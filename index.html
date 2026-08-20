@@ -77,8 +77,8 @@
                             <th class="p-4 whitespace-nowrap">DSR</th>
                             <th class="p-4 whitespace-nowrap">CUSTOMER NAME</th>
                             <th class="p-4 whitespace-nowrap">ELIGIBLE PROGRAM</th>
-                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
                             <th class="p-4 text-center whitespace-nowrap">STATUS CUSTOMER</th>
+                            <th class="p-4 text-center whitespace-nowrap">WIN JULY</th>
                             <th class="p-4 text-center whitespace-nowrap">TARGET</th>
                             <th class="p-4 text-center whitespace-nowrap">QTY PO</th>
                             <th class="p-4 text-center whitespace-nowrap">QTY INVOICE</th>
@@ -282,11 +282,11 @@
                 const sisa = item.target - item.invoice;
                 
                 // Styling warna badge WIN JULY / AUG
-                const winJulyBadge = item.winJuly.toUpperCase() === 'YES' || item.winJuly.toUpperCase() === 'WIN' 
+                const winJulyBadge = (item.winJuly.toUpperCase() === 'YES' || item.winJuly.toUpperCase() === 'WIN') 
                     ? 'bg-emerald-100 text-emerald-700 font-bold' 
                     : 'text-slate-500';
 
-                const winAugBadge = item.winAug.toUpperCase() === 'YES' || item.winAug.toUpperCase() === 'WIN' 
+                const winAugBadge = (item.winAug.toUpperCase() === 'YES' || item.winAug.toUpperCase() === 'WIN') 
                     ? 'bg-emerald-100 text-emerald-700 font-bold' 
                     : 'text-slate-500';
 
@@ -300,12 +300,12 @@
                             ${item.program}
                         </span>
                     </td>
+                    <td class="p-4 text-center font-medium text-slate-600 whitespace-nowrap">${item.statusCustomer}</td>
                     <td class="p-4 text-center whitespace-nowrap">
                         <span class="text-xs px-2.5 py-1 rounded-md ${winJulyBadge}">
                             ${item.winJuly}
                         </span>
                     </td>
-                    <td class="p-4 text-center font-medium text-slate-600 whitespace-nowrap">${item.statusCustomer}</td>
                     <td class="p-4 text-center font-medium whitespace-nowrap">${item.target.toLocaleString('id-ID')}</td>
                     <td class="p-4 text-center font-semibold text-blue-600 whitespace-nowrap">${item.po.toLocaleString('id-ID')}</td>
                     <td class="p-4 text-center font-semibold text-emerald-600 whitespace-nowrap">${item.invoice.toLocaleString('id-ID')}</td>
